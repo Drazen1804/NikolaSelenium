@@ -7,27 +7,28 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-public class TestShopping {
+public class TestLagunaWebsite {
     private WebDriver driver;
     private String URL = "https://www.laguna.rs/";
     private WebElement searchTextField;
     private WebElement searchSubmitIcon;
 
-    @BeforeTest
-    public void BeforeTest() {
+    @BeforeMethod
+    public void BeforeMethod() {
         driver = new ChromeDriver();
         driver.manage().window().maximize();
+        driver.get(URL);
     }
 
     @Test
     public void testSearchFunctionality() {
-        driver.get(URL);
-
         searchTextField = driver.findElement(By.id("pretraga_rec"));
         searchSubmitIcon = driver.findElement(By.id("pretraga_submit"));
 
@@ -44,7 +45,6 @@ public class TestShopping {
 
     @Test
     public void testOpenBookDetails() {
-        driver.get(URL);
         searchTextField = driver.findElement(By.id("pretraga_rec"));
         searchSubmitIcon = driver.findElement(By.id("pretraga_submit"));
 
@@ -77,9 +77,7 @@ public class TestShopping {
     @Test
     public void testAddToShoppingCart() {
         // Select the first book from section 'Top Lista' and add to shopping cart
-        driver.get(URL);
-
-        WebElement topListeWebElement = driver.findElement(By.cssSelector("#glavni-meni-wrapper a[href*='top-liste']"));
+        WebElement topListeWebElement = driver.findElement(By.xpath("//div[@id='glavni-meni-wrapper']//ul[@id='glavni-meni']//li[5]"));
         topListeWebElement.click();
 
         WebElement topRatedBook = driver.findElement(By.cssSelector("div#spisak-knjiga-knjige>div.knjiga.col-lg-3.col-md-3.col-sm-4.col-xs-8:nth-child(3)>div.podaci>a.naslov"));
@@ -87,21 +85,64 @@ public class TestShopping {
         String topRatedBookImageSelector = String.format("img[alt='%s']", topRatedBookTitle);
         WebElement topRatedBookImage = driver.findElement(By.cssSelector(topRatedBookImageSelector));
         topRatedBookImage.click();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(2));
 
-        WebElement dodajuKorpuButton = driver.findElement(By.cssSelector("div#cena>a#dugme-korpa"));
+        WebElement dodajuKorpuButton = driver.findElement(By.xpath("//div[@class='col-xs-24 col-sm-16 col-md-6 col-lg-6 col-md-push-14 col-lg-push-14']//a[@id='dugme-korpa']"));
         dodajuKorpuButton.click();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(1));
 
         WebElement korpaIcon = driver.findElement(By.id("korpa_broj"));
-        Assert.assertEquals("1", korpaIcon.getText());
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+        wait.until(ExpectedConditions.textToBePresentInElementLocated(By.id("korpa_broj"), "1"));
+
+        Assert.assertEquals(korpaIcon.getText(), "1");
 
         korpaIcon.click();
         WebElement bookFromCart = driver.findElement(By.cssSelector("td.knjiga a.naslov"));
         Assert.assertEquals(topRatedBookTitle, bookFromCart.getText());
     }
 
-    @AfterTest
+    @Test
+    public void testSocialMediaLinksArePresent() {
+        WebElement facebookIcon = driver.findElement(By.xpath("//ul[@class='nav navbar-nav navbar-right hidden-xs']//li//a[contains(@href, 'facebook')]//img"));
+        WebElement twitterIcon = driver.findElement(By.xpath("//ul[@class='nav navbar-nav navbar-right hidden-xs']//li//a[contains(@href, 'twitter')]//img"));
+        WebElement instagramIcon = driver.findElement(By.xpath("//ul[@class='nav navbar-nav navbar-right hidden-xs']//li//a[contains(@href, 'instagram')]//img"));
+        WebElement youtubeIcon = driver.findElement(By.xpath("//ul[@class='nav navbar-nav navbar-right hidden-xs']//li//a[contains(@href, 'youtube')]//img"));
+        WebElement tiktokIcon = driver.findElement(By.xpath("//ul[@class='nav navbar-nav navbar-right hidden-xs']//li//a[contains(@href, 'tiktok')]//img"));
+
+        Assert.assertTrue(facebookIcon.isDisplayed());
+        Assert.assertTrue(twitterIcon.isDisplayed());
+        Assert.assertTrue(instagramIcon.isDisplayed());
+        Assert.assertTrue(youtubeIcon.isDisplayed());
+        Assert.assertTrue(tiktokIcon.isDisplayed());
+    }
+
+    @Test
+    public void testAddBookToFavorites() {
+        searchTextField = driver.findElement(By.id("pretraga_rec"));
+        searchSubmitIcon = driver.findElement(By.id("pretraga_submit"));
+
+        searchTextField.sendKeys("Pobednici");
+        searchSubmitIcon.click();
+
+        WebElement searchResultItem = driver.findElement(By.xpath("//div[@class='podaci']//a[@class='naslov']"));
+        searchResultItem.click();
+
+        WebElement dodajNaListuZeljaButton = driver.findElement(By.xpath("//div[@class='col-xs-24 col-sm-16 col-md-6 col-lg-6 col-md-push-14 col-lg-push-14']//a[@id='dugme-zelje']"));
+        dodajNaListuZeljaButton.click();
+        WebElement zeljeIconBroj = driver.findElement(By.xpath("//a[@id='zelje_broj']"));
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+        wait.until(ExpectedConditions.textToBePresentInElementLocated(By.xpath("//a[@id='zelje_broj']"), "1"));
+
+
+        Assert.assertEquals(zeljeIconBroj.getText(), "1");
+
+        zeljeIconBroj.click();
+        WebElement listaZeljaFirstBook = driver.findElement(By.xpath("//a[@class='naslov']"));
+        Assert.assertEquals(listaZeljaFirstBook.getText(), "Pobednici");
+    }
+
+    @AfterMethod
     public void tearDown() {
         driver.quit();
     }
